@@ -8,6 +8,7 @@ import { allLangs, defaultLang } from './config-lang';
 
 // ----------------------------------------------------------------------
 
+
 export default function useLocales() {
   const { i18n, t: translate } = useTranslation();
 

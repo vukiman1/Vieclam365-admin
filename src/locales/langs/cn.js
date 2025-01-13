@@ -16,7 +16,7 @@ const cn = {
     documentation: `文件`,
   },
   app: `应用程序`,
-  user: `用户`,
+  user: `Hế luu`,
   list: `列表`,
   edit: `编辑`,
   shop: `商店`,

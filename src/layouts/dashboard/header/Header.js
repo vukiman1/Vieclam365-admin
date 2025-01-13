@@ -50,7 +50,6 @@ export default function Header({ onOpenNav }) {
       )}
 
       <Searchbar />
-
       <Stack
         flexGrow={1}
         direction="row"

@@ -19,7 +19,7 @@ export const allLangs = [
   },
   {
     label: 'Vietnamese',
-    value: 'vi',
+    value: 'vn',
     systemValue: viVN,
     icon: '/assets/icons/flags/ic_flag_vn.svg',
   },
