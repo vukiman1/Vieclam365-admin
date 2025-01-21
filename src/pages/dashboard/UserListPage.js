@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { paramCase } from 'change-case';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 // @mui
 import {
@@ -38,10 +38,11 @@ import {
 } from '../../components/table';
 // sections
 import { UserTableToolbar, UserTableRow } from '../../sections/@dashboard/user/list';
+import { userService } from '../../services/userService';
 
 // ----------------------------------------------------------------------
 
-const STATUS_OPTIONS = ['all', 'active', 'banned'];
+const STATUS_OPTIONS = ['all', 'active', 'inactive'];
 
 const ROLE_OPTIONS = [
   'all',
@@ -57,11 +58,11 @@ const ROLE_OPTIONS = [
 ];
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', align: 'left' },
-  { id: 'company', label: 'Company', align: 'left' },
-  { id: 'role', label: 'Role', align: 'left' },
-  { id: 'isVerified', label: 'Verified', align: 'center' },
-  { id: 'status', label: 'Status', align: 'left' },
+  { id: 'fullName', label: 'Full Name', align: 'left' },
+  { id: 'email', label: 'Email', align: 'left' },
+  { id: 'createdAt', label: 'Created At', align: 'center' },
+  { id: 'isVerifyEmail', label: 'Verified', align: 'center' },
+  { id: 'isActive', label: 'Active', align: 'left' },
   { id: '' },
 ];
 
@@ -101,6 +102,21 @@ export default function UserListPage() {
 
   const [filterStatus, setFilterStatus] = useState('all');
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+
+        const users = await userService.getAllUsers();
+        setTableData(users);
+
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+  console.log(tableData);
   const dataFiltered = applyFilter({
     inputData: tableData,
     comparator: getComparator(order, orderBy),
@@ -173,7 +189,7 @@ export default function UserListPage() {
   };
 
   const handleEditRow = (id) => {
-    navigate(PATH_DASHBOARD.user.edit(paramCase(id)));
+    navigate(PATH_DASHBOARD.user.edit(id));
   };
 
   const handleResetFilter = () => {
@@ -272,7 +288,9 @@ export default function UserListPage() {
                 />
 
                 <TableBody>
-                  {dataFiltered
+
+                  {
+                  dataFiltered
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((row) => (
                       <UserTableRow
@@ -281,7 +299,7 @@ export default function UserListPage() {
                         selected={selected.includes(row.id)}
                         onSelectRow={() => onSelectRow(row.id)}
                         onDeleteRow={() => handleDeleteRow(row.id)}
-                        onEditRow={() => handleEditRow(row.name)}
+                        onEditRow={() => handleEditRow(row.id)}
                       />
                     ))}
 
@@ -350,16 +368,14 @@ function applyFilter({ inputData, comparator, filterName, filterStatus, filterRo
 
   if (filterName) {
     inputData = inputData.filter(
-      (user) => user.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
+      (user) => user.fullName.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
     );
   }
 
   if (filterStatus !== 'all') {
-    inputData = inputData.filter((user) => user.status === filterStatus);
-  }
-
-  if (filterRole !== 'all') {
-    inputData = inputData.filter((user) => user.role === filterRole);
+    inputData = inputData.filter((user) => 
+      filterStatus === 'active' ? user.isActive : !user.isActive
+    );
   }
 
   return inputData;

@@ -29,7 +29,17 @@ UserTableRow.propTypes = {
 };
 
 export default function UserTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
-  const { name, avatarUrl, company, role, isVerified, status } = row;
+  // Explicitly destructure with fallback values
+  const { 
+    fullName = 'N/A', 
+    avatarUrl = '', 
+    email = 'N/A', 
+    createAt = 'N/A',
+    isActive = false, 
+    isVerifyEmail = false 
+
+  } = row || {};
+
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
@@ -60,40 +70,50 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
 
         <TableCell>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar alt={name} src={avatarUrl} />
+            <Avatar alt={fullName} src={avatarUrl} />
 
             <Typography variant="subtitle2" noWrap>
-              {name}
+              {fullName}
             </Typography>
           </Stack>
         </TableCell>
 
-        <TableCell align="left">{company}</TableCell>
+        <TableCell align="left">{email}</TableCell>
 
         <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
-          {role}
+          {
+      createAt
+          }
+          
         </TableCell>
 
         <TableCell align="center">
           <Iconify
-            icon={isVerified ? 'eva:checkmark-circle-fill' : 'eva:clock-outline'}
+            icon={isVerifyEmail ? 'eva:checkmark-circle-fill' : 'eva:clock-outline'}
             sx={{
               width: 20,
               height: 20,
               color: 'success.main',
-              ...(!isVerified && { color: 'warning.main' }),
+              ...(!isVerifyEmail && { color: 'warning.main' }),
             }}
           />
         </TableCell>
 
         <TableCell align="left">
-          <Label
-            variant="soft"
-            color={(status === 'banned' && 'error') || 'success'}
-            sx={{ textTransform: 'capitalize' }}
-          >
-            {status}
-          </Label>
+          <div>
+            <Label
+              variant="soft"
+              color={(isActive === true) ? 'success' : 'error'}
+              sx={{ 
+                textTransform: 'capitalize',
+                display: 'inline-block', // Ensure visibility
+                padding: '4px 8px',      // Add some padding
+                borderRadius: '4px'      // Add border radius
+              }}
+            >
+              {(isActive === true) ? 'Active' : 'Inactive'}
+            </Label>
+          </div>
         </TableCell>
 
         <TableCell align="right">
