@@ -6,7 +6,7 @@ export const userService = {
   // Fetch all users
   getAllUsers: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/auth/user-list`, {
+      const response = await axios.get(`${BASE_URL}/api/auth/admin/user-list`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -15,6 +15,21 @@ export const userService = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+
+  // Get user by ID
+  getUserById: async (userId) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/auth/admin/user-info/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching user:', error);
       throw error;
     }
   },

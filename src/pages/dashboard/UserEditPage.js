@@ -1,26 +1,34 @@
 import { Helmet } from 'react-helmet-async';
-import { paramCase } from 'change-case';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 // @mui
 import { Container } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../../routes/paths';
-// _mock_
-import { _userList } from '../../_mock/arrays';
 // components
 import { useSettingsContext } from '../../components/settings';
 import CustomBreadcrumbs from '../../components/custom-breadcrumbs';
+import LoadingScreen from '../../components/loading-screen';
 // sections
 import UserNewEditForm from '../../sections/@dashboard/user/UserNewEditForm';
+// service
+import { userService } from '../../services/userService';
 
 // ----------------------------------------------------------------------
 
 export default function UserEditPage() {
   const { themeStretch } = useSettingsContext();
 
-  const { name } = useParams();
+  const { id } = useParams();
 
-  const currentUser = _userList.find((user) => paramCase(user.name) === name);
+  const { data: currentUser, isLoading } = useQuery({
+    queryKey: ['user', id],
+    queryFn: () => userService.getUserById(id),
+  });
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <>

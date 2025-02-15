@@ -71,8 +71,8 @@ export default function GeneralAppPage() {
           <Grid item xs={12} md={4}>
             <AppWidgetSummary
               title="Total Active Users"
-              percent={2.6}
-              total={18765}
+              percent={9999}
+              total={999999}
               chart={{
                 colors: [theme.palette.primary.main],
                 series: [5, 18, 12, 51, 68, 11, 39, 37, 27, 20],

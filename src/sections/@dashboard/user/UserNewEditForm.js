@@ -7,13 +7,20 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, Card, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/material';
+import { 
+  Box, 
+  Card, 
+  Grid, 
+  Stack, 
+  Switch, 
+  Typography, 
+  FormControlLabel,
+  Divider
+} from '@mui/material';
 // utils
 import { fData } from '../../../utils/formatNumber';
 // routes
 import { PATH_DASHBOARD } from '../../../routes/paths';
-// assets
-import { countries } from '../../../assets/data';
 // components
 import Label from '../../../components/label';
 import { useSnackbar } from '../../../components/snackbar';
@@ -33,39 +40,62 @@ UserNewEditForm.propTypes = {
 
 export default function UserNewEditForm({ isEdit = false, currentUser }) {
   const navigate = useNavigate();
-
   const { enqueueSnackbar } = useSnackbar();
 
   const NewUserSchema = Yup.object().shape({
-    name: Yup.string().required('Name is required'),
+    fullName: Yup.string().required('Full Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    phoneNumber: Yup.string().required('Phone number is required'),
-    address: Yup.string().required('Address is required'),
-    country: Yup.string().required('Country is required'),
-    company: Yup.string().required('Company is required'),
-    state: Yup.string().required('State is required'),
-    city: Yup.string().required('City is required'),
-    role: Yup.string().required('Role is required'),
-    avatarUrl: Yup.string().required('Avatar is required').nullable(true),
+    avatarUrl: Yup.string().nullable(),
+    isActive: Yup.boolean(),
+    isVerifyEmail: Yup.boolean(),
+    roleName: Yup.string().required('Role is required'),
+    // JobSeeker fields
+    ...(currentUser?.roleName === 'JOB_SEEKER' && {
+      'jobSeekerProfile.phone': Yup.string().required('Phone number is required'),
+      'jobSeekerProfile.birthday': Yup.string().required('Birthday is required'),
+      'jobSeekerProfile.gender': Yup.string().required('Gender is required'),
+      'jobSeekerProfile.maritalStatus': Yup.string().required('Marital status is required'),
+    }),
+    // Employer fields
+    ...(currentUser?.roleName === 'EMPLOYER' && currentUser?.company && {
+      'company.companyName': Yup.string().required('Company name is required'),
+      'company.companyEmail': Yup.string().required('Company email is required').email('Email must be a valid email address'),
+      'company.companyPhone': Yup.string().required('Company phone is required'),
+      'company.websiteUrl': Yup.string(),
+      'company.fieldOperation': Yup.string().required('Field of operation is required'),
+      'company.employeeSize': Yup.number().required('Employee size is required'),
+      'company.location.address': Yup.string().required('Address is required'),
+    }),
   });
 
   const defaultValues = useMemo(
     () => ({
-      name: currentUser?.name || '',
+      fullName: currentUser?.fullName || '',
       email: currentUser?.email || '',
-      phoneNumber: currentUser?.phoneNumber || '',
-      address: currentUser?.address || '',
-      country: currentUser?.country || '',
-      state: currentUser?.state || '',
-      city: currentUser?.city || '',
-      zipCode: currentUser?.zipCode || '',
       avatarUrl: currentUser?.avatarUrl || null,
-      isVerified: currentUser?.isVerified || true,
-      status: currentUser?.status,
-      company: currentUser?.company || '',
-      role: currentUser?.role || '',
+      isActive: currentUser?.isActive ?? true,
+      isVerifyEmail: currentUser?.isVerifyEmail ?? false,
+      roleName: currentUser?.roleName || '',
+      // JobSeeker Profile
+      jobSeekerProfile: {
+        phone: currentUser?.jobSeekerProfile?.phone || '',
+        birthday: currentUser?.jobSeekerProfile?.birthday || '',
+        gender: currentUser?.jobSeekerProfile?.gender || '',
+        maritalStatus: currentUser?.jobSeekerProfile?.maritalStatus || '',
+      },
+      // Company Info
+      company: currentUser?.company ? {
+        companyName: currentUser.company.companyName || '',
+        companyEmail: currentUser.company.companyEmail || '',
+        companyPhone: currentUser.company.companyPhone || '',
+        websiteUrl: currentUser.company.websiteUrl || '',
+        fieldOperation: currentUser.company.fieldOperation || '',
+        employeeSize: currentUser.company.employeeSize || '',
+        location: {
+          address: currentUser.company.location?.address || '',
+        },
+      } : null,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentUser]
   );
 
@@ -92,31 +122,32 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
     if (!isEdit) {
       reset(defaultValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, currentUser]);
+  }, [isEdit, currentUser, reset, defaultValues]);
 
   const onSubmit = async (data) => {
     try {
+      // TODO: Implement your update logic here
       await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
       enqueueSnackbar(!isEdit ? 'Create success!' : 'Update success!');
       navigate(PATH_DASHBOARD.user.list);
       console.log('DATA', data);
     } catch (error) {
       console.error(error);
+      enqueueSnackbar('Error occurred!', { variant: 'error' });
     }
   };
 
   const handleDrop = useCallback(
     (acceptedFiles) => {
       const file = acceptedFiles[0];
-
-      const newFile = Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      });
-
       if (file) {
-        setValue('avatarUrl', newFile, { shouldValidate: true });
+        setValue(
+          'avatarUrl',
+          Object.assign(file, {
+            preview: URL.createObjectURL(file),
+          }),
+          { shouldValidate: true }
+        );
       }
     },
     [setValue]
@@ -127,14 +158,12 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <Card sx={{ pt: 10, pb: 5, px: 3 }}>
-            {isEdit && (
-              <Label
-                color={values.status === 'active' ? 'success' : 'error'}
-                sx={{ textTransform: 'uppercase', position: 'absolute', top: 24, right: 24 }}
-              >
-                {values.status}
-              </Label>
-            )}
+            <Label
+              color={values.isActive ? 'success' : 'error'}
+              sx={{ textTransform: 'uppercase', position: 'absolute', top: 24, right: 24 }}
+            >
+              {values.isActive ? 'Active' : 'Inactive'}
+            </Label>
 
             <Box sx={{ mb: 5 }}>
               <RHFUploadAvatar
@@ -159,40 +188,36 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
               />
             </Box>
 
-            {isEdit && (
-              <FormControlLabel
-                labelPlacement="start"
-                control={
-                  <Controller
-                    name="status"
-                    control={control}
-                    render={({ field }) => (
-                      <Switch
-                        {...field}
-                        checked={field.value !== 'active'}
-                        onChange={(event) =>
-                          field.onChange(event.target.checked ? 'banned' : 'active')
-                        }
-                      />
-                    )}
-                  />
-                }
-                label={
-                  <>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                      Banned
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Apply disable account
-                    </Typography>
-                  </>
-                }
-                sx={{ mx: 0, mb: 3, width: 1, justifyContent: 'space-between' }}
-              />
-            )}
+            <FormControlLabel
+              labelPlacement="start"
+              control={
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      {...field}
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                    />
+                  )}
+                />
+              }
+              label={
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    Account Status
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Enable/Disable account
+                  </Typography>
+                </>
+              }
+              sx={{ mx: 0, mb: 3, width: 1, justifyContent: 'space-between' }}
+            />
 
             <RHFSwitch
-              name="isVerified"
+              name="isVerifyEmail"
               labelPlacement="start"
               label={
                 <>
@@ -200,7 +225,7 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
                     Email Verified
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    Disabling this will automatically send the user a verification email
+                    Email verification status
                   </Typography>
                 </>
               }
@@ -220,26 +245,87 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
                 sm: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="name" label="Full Name" />
+              <RHFTextField name="fullName" label="Full Name" />
               <RHFTextField name="email" label="Email Address" />
-              <RHFTextField name="phoneNumber" label="Phone Number" />
-
-              <RHFSelect native name="country" label="Country" placeholder="Country">
+              
+              <RHFSelect native name="roleName" label="Role" disabled={isEdit}>
                 <option value="" />
-                {countries.map((country) => (
-                  <option key={country.code} value={country.label}>
-                    {country.label}
-                  </option>
-                ))}
+                <option value="JOB_SEEKER">Job Seeker</option>
+                <option value="EMPLOYER">Employer</option>
               </RHFSelect>
-
-              <RHFTextField name="state" label="State/Region" />
-              <RHFTextField name="city" label="City" />
-              <RHFTextField name="address" label="Address" />
-              <RHFTextField name="zipCode" label="Zip/Code" />
-              <RHFTextField name="company" label="Company" />
-              <RHFTextField name="role" label="Role" />
             </Box>
+
+            {values.roleName === 'JOB_SEEKER' && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 3 }}>
+                  Job Seeker Profile
+                </Typography>
+                <Box
+                  rowGap={3}
+                  columnGap={2}
+                  display="grid"
+                  gridTemplateColumns={{
+                    xs: 'repeat(1, 1fr)',
+                    sm: 'repeat(2, 1fr)',
+                  }}
+                >
+                  <RHFTextField name="jobSeekerProfile.phone" label="Phone Number" />
+                  <RHFTextField
+                    name="jobSeekerProfile.birthday"
+                    label="Birthday"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <RHFSelect native name="jobSeekerProfile.gender" label="Gender">
+                    <option value="" />
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                    <option value="O">Other</option>
+                  </RHFSelect>
+                  <RHFSelect native name="jobSeekerProfile.maritalStatus" label="Marital Status">
+                    <option value="" />
+                    <option value="S">Single</option>
+                    <option value="M">Married</option>
+                  </RHFSelect>
+                </Box>
+              </>
+            )}
+
+            {values.roleName === 'EMPLOYER' && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 3 }}>
+                  Company Information
+                </Typography>
+                <Box
+                  rowGap={3}
+                  columnGap={2}
+                  display="grid"
+                  gridTemplateColumns={{
+                    xs: 'repeat(1, 1fr)',
+                    sm: 'repeat(2, 1fr)',
+                  }}
+                >
+                  <RHFTextField name="company.companyName" label="Company Name" />
+                  <RHFTextField name="company.companyEmail" label="Company Email" />
+                  <RHFTextField name="company.companyPhone" label="Company Phone" />
+                  <RHFTextField name="company.websiteUrl" label="Website URL" />
+                  <RHFTextField name="company.fieldOperation" label="Field of Operation" />
+                  <RHFTextField
+                    name="company.employeeSize"
+                    label="Employee Size"
+                    type="number"
+                  />
+                  <RHFTextField
+                    name="company.location.address"
+                    label="Address"
+                    fullWidth
+                    sx={{ gridColumn: '1 / -1' }}
+                  />
+                </Box>
+              </>
+            )}
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>

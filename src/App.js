@@ -26,37 +26,37 @@ import 'react-lazy-load-image-component/src/effects/blur.css';
 
 // ----------------------------------------------------------------------
 
+// node_modules
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PersistGate } from 'redux-persist/lib/integration/react';
-// @mui
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-// redux
+
+// local
 import { store, persistor } from './redux/store';
-// routes
 import Router from './routes';
-// theme
 import ThemeProvider from './theme';
-// locales
 import ThemeLocalization from './locales';
-// components
 import { StyledChart } from './components/chart';
 import SnackbarProvider from './components/snackbar';
 import ScrollToTop from './components/scroll-to-top';
 import { MotionLazyContainer } from './components/animate';
 import { ThemeSettings, SettingsProvider } from './components/settings';
-
-// Check our docs
-// https://docs.minimals.cc/authentication/js-version
-
 import { AuthProvider } from './auth/JwtContext';
-// import { AuthProvider } from './auth/Auth0Context';
-// import { AuthProvider } from './auth/FirebaseContext';
-// import { AuthProvider } from './auth/AwsCognitoContext';
 
 // ----------------------------------------------------------------------
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
 
 export default function App() {
   return (
@@ -73,8 +73,10 @@ export default function App() {
                       <ThemeSettings>
                         <ThemeLocalization>
                           <SnackbarProvider>
-                            <StyledChart />
-                            <Router />
+                            <QueryClientProvider client={queryClient}>
+                              <StyledChart />
+                              <Router />
+                            </QueryClientProvider>
                           </SnackbarProvider>
                         </ThemeLocalization>
                       </ThemeSettings>
