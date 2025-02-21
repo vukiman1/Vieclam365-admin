@@ -18,14 +18,13 @@ import {
 } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../../routes/paths';
-// _mock_
-import { _userList } from '../../_mock/arrays';
 // components
 import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
 import ConfirmDialog from '../../components/confirm-dialog';
 import CustomBreadcrumbs from '../../components/custom-breadcrumbs';
 import { useSettingsContext } from '../../components/settings';
+import LoadingScreen from '../../components/loading-screen';
 import {
   useTable,
   getComparator,
@@ -92,7 +91,8 @@ export default function UserListPage() {
 
   const navigate = useNavigate();
 
-  const [tableData, setTableData] = useState(_userList);
+  const [tableData, setTableData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
@@ -104,6 +104,7 @@ export default function UserListPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoading(true);
       try {
 
         const users = await userService.getAllUsers();
@@ -111,6 +112,8 @@ export default function UserListPage() {
 
       } catch (err) {
         console.log(err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -197,6 +200,10 @@ export default function UserListPage() {
     setFilterRole('all');
     setFilterStatus('all');
   };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <>

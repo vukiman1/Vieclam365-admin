@@ -20,7 +20,7 @@ export default function UserEditPage() {
   const { themeStretch } = useSettingsContext();
 
   const { id } = useParams();
-
+  console.log(id);
   const { data: currentUser, isLoading } = useQuery({
     queryKey: ['user', id],
     queryFn: () => userService.getUserById(id),

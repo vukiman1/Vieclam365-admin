@@ -48,7 +48,16 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
     avatarUrl: Yup.string().nullable(),
     isActive: Yup.boolean(),
     isVerifyEmail: Yup.boolean(),
+    isSupperuser: Yup.boolean(),
+    isStaff: Yup.boolean(),
+    lastLogin: Yup.string().nullable(),
+    createAt: Yup.string().nullable(),
+    updateAt: Yup.string().nullable(),
     roleName: Yup.string().required('Role is required'),
+    // Social Media URLs
+    facebookUrl: Yup.string().nullable(),
+    youtubeUrl: Yup.string().nullable(),
+    linkedinUrl: Yup.string().nullable(),
     // JobSeeker fields
     ...(currentUser?.roleName === 'JOB_SEEKER' && {
       'jobSeekerProfile.phone': Yup.string().required('Phone number is required'),
@@ -61,10 +70,15 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
       'company.companyName': Yup.string().required('Company name is required'),
       'company.companyEmail': Yup.string().required('Company email is required').email('Email must be a valid email address'),
       'company.companyPhone': Yup.string().required('Company phone is required'),
-      'company.websiteUrl': Yup.string(),
+      'company.websiteUrl': Yup.string().nullable(),
       'company.fieldOperation': Yup.string().required('Field of operation is required'),
       'company.employeeSize': Yup.number().required('Employee size is required'),
+      'company.slug': Yup.string().nullable(),
+      'company.taxCode': Yup.string().nullable(),
+      'company.since': Yup.string().nullable(),
       'company.location.address': Yup.string().required('Address is required'),
+      'company.location.lat': Yup.number().nullable(),
+      'company.location.lng': Yup.number().nullable(),
     }),
   });
 
@@ -75,11 +89,19 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
       avatarUrl: currentUser?.avatarUrl || null,
       isActive: currentUser?.isActive ?? true,
       isVerifyEmail: currentUser?.isVerifyEmail ?? false,
+      isSupperuser: currentUser?.isSupperuser ?? false,
+      isStaff: currentUser?.isStaff ?? false,
+      lastLogin: currentUser?.lastLogin || null,
+      createAt: currentUser?.createAt || null,
+      updateAt: currentUser?.updateAt || null,
       roleName: currentUser?.roleName || '',
+      facebookUrl: currentUser?.facebookUrl || '',
+      youtubeUrl: currentUser?.youtubeUrl || '',
+      linkedinUrl: currentUser?.linkedinUrl || '',
       // JobSeeker Profile
       jobSeekerProfile: {
         phone: currentUser?.jobSeekerProfile?.phone || '',
-        birthday: currentUser?.jobSeekerProfile?.birthday || '',
+        birthday: currentUser?.jobSeekerProfile?.birthday ? new Date(currentUser.jobSeekerProfile.birthday).toISOString().split('T')[0] : '',
         gender: currentUser?.jobSeekerProfile?.gender || '',
         maritalStatus: currentUser?.jobSeekerProfile?.maritalStatus || '',
       },
@@ -91,8 +113,13 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
         websiteUrl: currentUser.company.websiteUrl || '',
         fieldOperation: currentUser.company.fieldOperation || '',
         employeeSize: currentUser.company.employeeSize || '',
+        slug: currentUser.company.slug || '',
+        taxCode: currentUser.company.taxCode || '',
+        since: currentUser.company.since || '',
         location: {
           address: currentUser.company.location?.address || '',
+          lat: currentUser.company.location?.lat || null,
+          lng: currentUser.company.location?.lng || null,
         },
       } : null,
     }),
@@ -126,11 +153,33 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
 
   const onSubmit = async (data) => {
     try {
+      console.log('Current User Data:', currentUser);
+      console.log('Form Data:', data);
+      
       // TODO: Implement your update logic here
       await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      // Prepare the update data
+      const updateData = {
+        ...data,
+        id: currentUser.id,
+        jobSeekerProfile: currentUser.roleName === 'JOB_SEEKER' ? {
+          ...currentUser.jobSeekerProfile,
+          ...data.jobSeekerProfile,
+        } : undefined,
+        company: currentUser.roleName === 'EMPLOYER' ? {
+          ...currentUser.company,
+          ...data.company,
+        } : undefined,
+      };
+      
+      console.log('Update Data:', updateData);
+      
+      // TODO: Call your API to update user
+      // await userService.updateUser(updateData);
+      
       enqueueSnackbar(!isEdit ? 'Create success!' : 'Update success!');
       navigate(PATH_DASHBOARD.user.list);
-      console.log('DATA', data);
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Error occurred!', { variant: 'error' });
@@ -231,6 +280,38 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
               }
               sx={{ mx: 0, width: 1, justifyContent: 'space-between' }}
             />
+
+            <RHFSwitch
+              name="isSupperuser"
+              labelPlacement="start"
+              label={
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    Is Supperuser
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Supperuser status
+                  </Typography>
+                </>
+              }
+              sx={{ mx: 0, width: 1, justifyContent: 'space-between' }}
+            />
+
+            <RHFSwitch
+              name="isStaff"
+              labelPlacement="start"
+              label={
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    Is Staff
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Staff status
+                  </Typography>
+                </>
+              }
+              sx={{ mx: 0, width: 1, justifyContent: 'space-between' }}
+            />
           </Card>
         </Grid>
 
@@ -253,6 +334,41 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
                 <option value="JOB_SEEKER">Job Seeker</option>
                 <option value="EMPLOYER">Employer</option>
               </RHFSelect>
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              System Information
+            </Typography>
+            <Box
+              rowGap={3}
+              columnGap={2}
+              display="grid"
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+              }}
+            >
+              <RHFTextField 
+                name="lastLogin" 
+                label="Last Login" 
+                disabled 
+                value={currentUser?.lastLogin ? new Date(currentUser.lastLogin).toLocaleString() : 'N/A'}
+              />
+              <RHFTextField 
+                name="createAt" 
+                label="Created At" 
+                disabled 
+                value={currentUser?.createAt ? new Date(currentUser.createAt).toLocaleString() : 'N/A'}
+              />
+              <RHFTextField 
+                name="updateAt" 
+                label="Updated At" 
+                disabled 
+                value={currentUser?.updateAt ? new Date(currentUser.updateAt).toLocaleString() : 'N/A'}
+              />
+
+
             </Box>
 
             {values.roleName === 'JOB_SEEKER' && (
@@ -317,10 +433,25 @@ export default function UserNewEditForm({ isEdit = false, currentUser }) {
                     label="Employee Size"
                     type="number"
                   />
+                  <RHFTextField name="company.slug" label="Slug" />
+                  <RHFTextField name="company.taxCode" label="Tax Code" />
+                  <RHFTextField name="company.since" label="Since" />
                   <RHFTextField
                     name="company.location.address"
                     label="Address"
                     fullWidth
+                    sx={{ gridColumn: '1 / -1' }}
+                  />
+                  <RHFTextField
+                    name="company.location.lat"
+                    label="Latitude"
+                    type="number"
+                    sx={{ gridColumn: '1 / -1' }}
+                  />
+                  <RHFTextField
+                    name="company.location.lng"
+                    label="Longitude"
+                    type="number"
                     sx={{ gridColumn: '1 / -1' }}
                   />
                 </Box>
